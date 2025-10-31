@@ -3,7 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spider Invasion</title>
+    <title>Save Human from Spider Invasion</title>
+
+    <!-- OpenGraph Meta Tags -->
+    <meta property="og:title" content="Save Human from Spider Invasion">
+    <meta property="og:description" content="Protect the human from deadly spiders! Click to eliminate them before they reach the center. Fast-paced survival game with realistic walking spiders.">
+    <meta property="og:image" content="https://deepakmahakale.com/spider-invasion/opengraph.png">
+    <meta property="og:image:alt" content="Spider Invasion game showing human character surrounded by spiders with game stats panel">
+    <meta property="og:url" content="https://deepakmahakale.com/spider-invasion/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Spider Invasion Game">
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Save Human from Spider Invasion">
+    <meta name="twitter:description" content="Protect the human from deadly spiders! Click to eliminate them before they reach the center. Fast-paced survival game with realistic walking spiders.">
+    <meta name="twitter:image" content="https://deepakmahakale.com/spider-invasion/opengraph.png">
+    <meta name="twitter:image:alt" content="Spider Invasion game showing human character surrounded by spiders with game stats panel">
+
+    <!-- Additional Meta Tags -->
+    <meta name="description" content="Protect the human from deadly spiders! Click to eliminate them before they reach the center. Fast-paced survival game with realistic walking spiders.">
+    <meta name="keywords" content="spider game, survival game, click game, arcade game, web game, browser game">
+    <meta name="author" content="Spider Invasion Game">
+
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🕷️</text></svg>">
     <style>
         body {
             margin: 0;
@@ -258,6 +282,35 @@
             background: red;
             color: white;
         }
+
+        .twitter-btn {
+            background: #1DA1F2;
+            color: white;
+            border: 3px solid #1DA1F2;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 20px;
+            margin-left: 20px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .twitter-btn:hover {
+            background: #0d8bd9;
+            border-color: #0d8bd9;
+            transform: scale(1.05);
+        }
+
+        .game-over-buttons {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
     </style>
 </head>
 <body>
@@ -346,7 +399,12 @@
     <div class="game-over" id="gameOver">
         <div>🕷️ GAME OVER 🕷️</div>
         <div style="font-size: 24px; margin-top: 20px;">The spiders got the human!</div>
-        <button class="retry-btn" onclick="restartGame()">Try Again</button>
+        <div class="game-over-buttons">
+            <button class="retry-btn" onclick="restartGame()">Try Again</button>
+            <a href="#" class="twitter-btn" id="twitterShare" target="_blank">
+                🐦 Share Challenge
+            </a>
+        </div>
     </div>
 
     <script>
@@ -591,6 +649,9 @@
             gameStarted = false;
             document.getElementById('gameOver').classList.add('show');
 
+            // Update Twitter share link
+            updateTwitterShare();
+
             // Remove all spiders
             const spiders = document.querySelectorAll('.spider');
             spiders.forEach(spider => {
@@ -600,6 +661,15 @@
             });
 
             activeSpiders = 0;
+        }
+
+        function updateTwitterShare() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const tweetText = `Can you save human from spider invasion? I survived ${elapsed}s and killed ${score} spiders! 🕷️💀 Think you can do better?`;
+            const url = 'https://deepakmahakale.com/spider-invasion/';
+            const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(url)}`;
+
+            document.getElementById('twitterShare').href = twitterUrl;
         }
 
         function restartGame() {
