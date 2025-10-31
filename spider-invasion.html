@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spider Invasion</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        .spider {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            z-index: 10000;
+            transition: transform 0.1s ease;
+            pointer-events: auto;
+        }
+
+        .spider:hover {
+            transform: scale(1.1);
+        }
+
+        .spider.dead {
+            animation: spiderDie 0.3s ease-out forwards;
+        }
+
+        @keyframes spiderDie {
+            0% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(0) rotate(180deg);
+                opacity: 0;
+            }
+        }
+
+        .spider-svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+            transition: transform 0.2s ease;
+        }
+
+        .stats-panel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 10001;
+            min-width: 300px;
+            border: 2px solid #333;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #ff6b6b;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .chart-container {
+            margin-top: 20px;
+            height: 150px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 15px;
+            position: relative;
+        }
+
+        .chart-title {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #ccc;
+        }
+
+        .chart {
+            height: 100px;
+            position: relative;
+            border-left: 2px solid #666;
+            border-bottom: 2px solid #666;
+        }
+
+        .chart-line {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+        }
+
+        .chart-point {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #ff6b6b;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .chart-line-path {
+            stroke: #ff6b6b;
+            stroke-width: 2;
+            fill: none;
+            filter: drop-shadow(0 0 3px #ff6b6b);
+        }
+
+        .instructions {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            z-index: 10002;
+            transition: opacity 0.3s ease;
+            border: 2px solid #ff6b6b;
+        }
+
+        .instructions.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .start-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .start-btn:hover {
+            background: #ff5252;
+            transform: scale(1.05);
+        }
+
+        .human {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            width: 60px;
+            height: 100px;
+            cursor: default;
+        }
+
+        .human-svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.3));
+        }
+
+        @keyframes scared {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1) rotate(-2deg); }
+        }
+
+        .human.scared {
+            animation: scared 0.3s ease-in-out;
+        }
+
+        @keyframes walkLegs {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(10deg); }
+            50% { transform: rotate(0deg); }
+            75% { transform: rotate(-10deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        .spider.walking .leg1,
+        .spider.walking .leg5 {
+            animation: walkLegs 0.4s infinite ease-in-out;
+        }
+
+        .spider.walking .leg2,
+        .spider.walking .leg6 {
+            animation: walkLegs 0.4s infinite ease-in-out 0.1s;
+        }
+
+        .spider.walking .leg3,
+        .spider.walking .leg7 {
+            animation: walkLegs 0.4s infinite ease-in-out 0.2s;
+        }
+
+        .spider.walking .leg4,
+        .spider.walking .leg8 {
+            animation: walkLegs 0.4s infinite ease-in-out 0.3s;
+        }
+
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 0, 0, 0.9);
+            color: white;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 10003;
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .game-over.show {
+            display: flex;
+        }
+
+        .retry-btn {
+            background: white;
+            color: red;
+            border: 3px solid white;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 24px;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .retry-btn:hover {
+            background: red;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions" id="instructions">
+        <h2>🕷️ Spider Invasion!</h2>
+        <p>Protect the human from the spider invasion!<br>
+        Click on the spiders to eliminate them before they reach the center!</p>
+        <button class="start-btn" onclick="startGame()">Start Game</button>
+    </div>
+
+    <div class="human" id="human">
+        <svg class="human-svg" viewBox="0 0 60 100" xmlns="http://www.w3.org/2000/svg">
+            <!-- Head -->
+            <circle cx="30" cy="15" r="12" fill="#fdbcb4" stroke="#333" stroke-width="1"/>
+
+            <!-- Hair -->
+            <path d="M18 8 Q30 2 42 8 Q42 5 30 3 Q18 5 18 8" fill="#8B4513"/>
+
+            <!-- Eyes -->
+            <circle cx="25" cy="12" r="2" fill="white"/>
+            <circle cx="35" cy="12" r="2" fill="white"/>
+            <circle cx="25" cy="12" r="1" fill="black"/>
+            <circle cx="35" cy="12" r="1" fill="black"/>
+
+            <!-- Mouth -->
+            <path d="M27 18 Q30 21 33 18" stroke="#333" stroke-width="1" fill="none"/>
+
+            <!-- Body -->
+            <rect x="22" y="27" width="16" height="35" rx="3" fill="#4169E1" stroke="#333" stroke-width="1"/>
+
+            <!-- Arms -->
+            <circle cx="15" cy="35" r="4" fill="#fdbcb4" stroke="#333" stroke-width="1"/>
+            <circle cx="45" cy="35" r="4" fill="#fdbcb4" stroke="#333" stroke-width="1"/>
+            <rect x="11" y="31" width="8" height="20" rx="4" fill="#fdbcb4" stroke="#333" stroke-width="1"/>
+            <rect x="41" y="31" width="8" height="20" rx="4" fill="#fdbcb4" stroke="#333" stroke-width="1"/>
+
+            <!-- Legs -->
+            <rect x="24" y="62" width="5" height="25" rx="2" fill="#654321" stroke="#333" stroke-width="1"/>
+            <rect x="31" y="62" width="5" height="25" rx="2" fill="#654321" stroke="#333" stroke-width="1"/>
+
+            <!-- Feet -->
+            <ellipse cx="26.5" cy="90" rx="6" ry="3" fill="#000"/>
+            <ellipse cx="33.5" cy="90" rx="6" ry="3" fill="#000"/>
+
+            <!-- Face details -->
+            <circle cx="23" cy="10" r="1" fill="#ff69b4"/>
+            <circle cx="37" cy="10" r="1" fill="#ff69b4"/>
+        </svg>
+    </div>
+
+    <div class="stats-panel">
+        <div class="title">🕷️ Spider Invasion</div>
+        <div class="stat-row">
+            <span>Spiders Killed:</span>
+            <span id="score">0</span>
+        </div>
+        <div class="stat-row">
+            <span>Active Spiders:</span>
+            <span id="active">0</span>
+        </div>
+        <div class="stat-row">
+            <span>Survival Time:</span>
+            <span id="time">0s</span>
+        </div>
+        <div class="stat-row">
+            <span>Kill Rate:</span>
+            <span id="rate">0/min</span>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">Spiders Killed Over Time</div>
+            <div class="chart">
+                <svg id="killChart" width="100%" height="100%" viewBox="0 0 270 100">
+                    <defs>
+                        <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#ff6b6b;stop-opacity:0.3" />
+                            <stop offset="100%" style="stop-color:#ff6b6b;stop-opacity:0.1" />
+                        </linearGradient>
+                    </defs>
+                    <path id="chartPath" d="M0,100" stroke="#ff6b6b" stroke-width="2" fill="url(#chartGradient)"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-over" id="gameOver">
+        <div>🕷️ GAME OVER 🕷️</div>
+        <div style="font-size: 24px; margin-top: 20px;">The spiders got the human!</div>
+        <button class="retry-btn" onclick="restartGame()">Try Again</button>
+    </div>
+
+    <script>
+        let score = 0;
+        let activeSpiders = 0;
+        let gameStarted = false;
+        let startTime = 0;
+        let chartData = [];
+        const maxSpiders = 25;
+        const spiderSpeed = 1.5;
+
+        // Human position (center of screen)
+        let humanX = 0;
+        let humanY = 0;
+
+        // Update human position when window resizes
+        function updateHumanPosition() {
+            humanX = window.innerWidth / 2;
+            humanY = window.innerHeight / 2;
+        }
+
+        // Initialize human position
+        updateHumanPosition();
+        window.addEventListener('resize', updateHumanPosition);
+
+        function createSpiderSVG() {
+            return `
+                <svg class="spider-svg" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Spider body -->
+                    <ellipse cx="20" cy="22" rx="6" ry="9" fill="#1a1a1a" stroke="#000" stroke-width="0.5"/>
+
+                    <!-- Spider head -->
+                    <circle cx="20" cy="15" r="4" fill="#2a2a2a" stroke="#000" stroke-width="0.5"/>
+
+                    <!-- Eyes -->
+                    <circle cx="18" cy="13" r="1" fill="#ff0000"/>
+                    <circle cx="22" cy="13" r="1" fill="#ff0000"/>
+                    <circle cx="17" cy="15" r="0.5" fill="#ff0000"/>
+                    <circle cx="23" cy="15" r="0.5" fill="#ff0000"/>
+
+                    <!-- Legs with classes for animation -->
+                    <g stroke="#1a1a1a" stroke-width="2" fill="none" stroke-linecap="round">
+                        <!-- Left legs -->
+                        <path class="leg1" d="M14 18 L8 12 L5 14" transform-origin="14 18"/>
+                        <path class="leg2" d="M13 21 L5 18 L2 21" transform-origin="13 21"/>
+                        <path class="leg3" d="M13 25 L5 28 L2 32" transform-origin="13 25"/>
+                        <path class="leg4" d="M14 28 L8 34 L5 36" transform-origin="14 28"/>
+
+                        <!-- Right legs -->
+                        <path class="leg5" d="M26 18 L32 12 L35 14" transform-origin="26 18"/>
+                        <path class="leg6" d="M27 21 L35 18 L38 21" transform-origin="27 21"/>
+                        <path class="leg7" d="M27 25 L35 28 L38 32" transform-origin="27 25"/>
+                        <path class="leg8" d="M26 28 L32 34 L35 36" transform-origin="26 28"/>
+                    </g>
+
+                    <!-- Pedipalps -->
+                    <circle cx="18" cy="11" r="1" fill="#333"/>
+                    <circle cx="22" cy="11" r="1" fill="#333"/>
+                </svg>
+            `;
+        }
+
+        function createSpider() {
+            if (!gameStarted || activeSpiders >= maxSpiders) return;
+
+            const spider = document.createElement('div');
+            spider.className = 'spider walking';
+            spider.innerHTML = createSpiderSVG();
+
+            // Random edge spawn position
+            const edge = Math.floor(Math.random() * 4);
+            let x, y;
+
+            switch(edge) {
+                case 0: // top
+                    x = Math.random() * window.innerWidth;
+                    y = -40;
+                    break;
+                case 1: // right
+                    x = window.innerWidth;
+                    y = Math.random() * window.innerHeight;
+                    break;
+                case 2: // bottom
+                    x = Math.random() * window.innerWidth;
+                    y = window.innerHeight;
+                    break;
+                case 3: // left
+                    x = -40;
+                    y = Math.random() * window.innerHeight;
+                    break;
+            }
+
+            spider.style.left = x + 'px';
+            spider.style.top = y + 'px';
+
+            // Click to kill
+            spider.addEventListener('click', function(e) {
+                e.stopPropagation();
+                spider.classList.add('dead');
+                score++;
+                activeSpiders--;
+                updateScore();
+                updateChart();
+
+                setTimeout(() => {
+                    if (spider.parentNode) {
+                        spider.parentNode.removeChild(spider);
+                    }
+                }, 300);
+            });
+
+            document.body.appendChild(spider);
+            activeSpiders++;
+            updateScore();
+
+            // Move toward human
+            const moveTowardHuman = () => {
+                if (!spider.parentNode || spider.classList.contains('dead')) {
+                    return;
+                }
+
+                const currentX = parseFloat(spider.style.left);
+                const currentY = parseFloat(spider.style.top);
+
+                const dx = humanX - currentX - 20;
+                const dy = humanY - currentY - 20;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance > 5) {
+                    const newX = currentX + (dx / distance) * spiderSpeed;
+                    const newY = currentY + (dy / distance) * spiderSpeed;
+
+                    spider.style.left = newX + 'px';
+                    spider.style.top = newY + 'px';
+
+                    // Rotate spider to face movement direction
+                    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                    spider.querySelector('.spider-svg').style.transform = `rotate(${angle + 90}deg)`;
+
+                    // Check if spider touches human (game over)
+                    if (distance < 30) {
+                        gameOver();
+                        return;
+                    }
+
+                    // Make human scared if spider is close
+                    if (distance < 100) {
+                        document.getElementById('human').classList.add('scared');
+                        setTimeout(() => {
+                            document.getElementById('human').classList.remove('scared');
+                        }, 300);
+                    }
+                }
+
+                requestAnimationFrame(moveTowardHuman);
+            };
+
+            moveTowardHuman();
+
+            // Remove spider after 45 seconds if not clicked
+            setTimeout(() => {
+                if (spider.parentNode && !spider.classList.contains('dead')) {
+                    spider.classList.add('dead');
+                    activeSpiders--;
+                    updateScore();
+                    setTimeout(() => {
+                        if (spider.parentNode) {
+                            spider.parentNode.removeChild(spider);
+                        }
+                    }, 300);
+                }
+            }, 45000);
+        }
+
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('active').textContent = activeSpiders;
+
+            if (gameStarted) {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                document.getElementById('time').textContent = elapsed + 's';
+
+                const rate = elapsed > 0 ? Math.round((score / elapsed) * 60) : 0;
+                document.getElementById('rate').textContent = rate + '/min';
+            }
+        }
+
+        function updateChart() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            chartData.push({time: elapsed, kills: score});
+
+            if (chartData.length > 50) {
+                chartData.shift();
+            }
+
+            drawChart();
+        }
+
+        function drawChart() {
+            if (chartData.length < 2) return;
+
+            const svg = document.getElementById('killChart');
+            const path = document.getElementById('chartPath');
+
+            const maxKills = Math.max(...chartData.map(d => d.kills), 1);
+            const maxTime = Math.max(...chartData.map(d => d.time), 1);
+
+            let pathData = 'M0,100 ';
+
+            chartData.forEach((point, index) => {
+                const x = (point.time / maxTime) * 270;
+                const y = 100 - (point.kills / maxKills) * 80;
+                pathData += `L${x},${y} `;
+            });
+
+            pathData += 'L270,100 Z';
+            path.setAttribute('d', pathData);
+        }
+
+        function startGame() {
+            gameStarted = true;
+            startTime = Date.now();
+            document.getElementById('instructions').classList.add('hidden');
+
+            // Update timer
+            setInterval(updateScore, 1000);
+
+            // Spawn spiders more frequently
+            setInterval(() => {
+                if (Math.random() < 0.8) {
+                    createSpider();
+                }
+            }, 800);
+
+            // Initial burst of spiders
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => createSpider(), i * 300);
+            }
+        }
+
+        function gameOver() {
+            gameStarted = false;
+            document.getElementById('gameOver').classList.add('show');
+
+            // Remove all spiders
+            const spiders = document.querySelectorAll('.spider');
+            spiders.forEach(spider => {
+                if (spider.parentNode) {
+                    spider.parentNode.removeChild(spider);
+                }
+            });
+
+            activeSpiders = 0;
+        }
+
+        function restartGame() {
+            // Reset game state
+            score = 0;
+            activeSpiders = 0;
+            gameStarted = false;
+            chartData = [];
+
+            // Hide game over screen
+            document.getElementById('gameOver').classList.remove('show');
+
+            // Reset stats
+            updateScore();
+
+            // Show instructions again
+            document.getElementById('instructions').classList.remove('hidden');
+
+            // Reset chart
+            document.getElementById('chartPath').setAttribute('d', 'M0,100');
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            const spiders = document.querySelectorAll('.spider');
+            spiders.forEach(spider => {
+                const x = Math.min(parseInt(spider.style.left), window.innerWidth - 40);
+                const y = Math.min(parseInt(spider.style.top), window.innerHeight - 40);
+                spider.style.left = x + 'px';
+                spider.style.top = y + 'px';
+            });
+        });
+    </script>
+</body>
+</html>
